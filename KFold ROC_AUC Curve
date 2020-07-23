@@ -1,0 +1,74 @@
+df = pd.read_csv('creditcard.csv')       # loading data
+
+X = df.drop(['Time','Class'],axis = 1)
+y = df['Class']
+
+cv = StratifiedKFold(n_splits=3)
+clf = RandomForestClassifier(random_state =42)
+
+
+# plot arrows
+fig1 = plt.figure(figsize=[12,12])
+ax1 = fig1.add_subplot(111,aspect = 'equal')
+#ax1.add_patch(patches.Arrow(0.45,0.5,-0.25,0.25,width=0.3,color='green',alpha = 0.5))
+#ax1.add_patch(patches.Arrow(0.5,0.45,0.25,-0.25,width=0.3,color='red',alpha = 0.5))
+
+
+tprs_train = []
+aucs_train = []
+mean_fpr_train = np.linspace(0,1,100)
+
+
+tprs = []
+aucs = []
+mean_fpr = np.linspace(0,1,100)
+i = 1
+
+for train,test in cv.split(X,y):
+    #model fit
+    clf.fit(X.iloc[train],y.iloc[train])
+    
+    # probabilities
+    y_testProba  = clf.predict_proba(X.iloc[test])[:,1]
+    y_trainProba = clf.predict_proba(X.iloc[train])[:,1]
+    
+    # roc
+    fpr_train,tpr_train,_ = roc_curve(y[train],y_trainProba)
+    fpr_test, tpr_test, t = roc_curve(y.iloc[test], y_testProba)
+   
+    # appending
+    tprs_train.append(interp(mean_fpr_train, fpr_train, tpr_train))
+    tprs.append(interp(mean_fpr, fpr_test, tpr_test))
+    
+    roc_auc_train = auc(fpr_train, tpr_train)
+    roc_auc_test = auc(fpr_test, tpr_test)
+    
+    aucs_train.append(roc_auc_train)
+    aucs.append(roc_auc_test)
+   
+    # plotting kfold curves
+    plt.plot(fpr_train, tpr_train, lw=2, alpha=0.3, label='Train ROC fold %d (AUC = %0.2f)' % (i, roc_auc_train))
+    plt.plot(fpr_test, tpr_test, lw=2, alpha=0.3, label='Test ROC fold %d (AUC = %0.2f)' % (i, roc_auc_test))
+    
+    print('KFold: {}, Train AUC {} & Test AUC{}'.format(i,round((roc_auc_train),3),round((roc_auc_test),3)))
+    i= i+1
+
+
+#plt.plot([0,1],[0,1],linestyle = '--',lw = 2,color = 'black')
+mean_tpr_train = np.mean(tprs_train, axis=0)
+mean_auc_train = auc(mean_fpr_train, mean_tpr_train)
+
+mean_tpr_test = np.mean(tprs, axis=0)
+mean_auc_test = auc(mean_fpr, mean_tpr_test)
+plt.plot([0,1],[0,1],'k--')
+
+plt.plot(mean_fpr_train, mean_tpr_train, color='red',label=r'Mean ROC Train (AUC = %0.2f )' % (mean_auc_train),lw=2, alpha=1)
+plt.plot(mean_fpr, mean_tpr_test, color='blue',label=r'Mean ROC Test (AUC = %0.2f )' % (mean_auc_test),lw=2, alpha=1)
+
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC')
+plt.legend(loc="lower right")
+#plt.teXt(0.32,0.7,'More accurate area',fontsize = 12)
+#plt.teXt(0.63,0.4,'Less accurate area',fontsize = 12)
+plt.show()
