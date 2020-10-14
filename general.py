@@ -8,7 +8,13 @@ df = pd.read_csv('train.csv', sep='\t', usecols = req_col)
 # reading dataframe with specific value of a column
 df = pd.read_csv('train.csv')[lambda x:x['client_number']==121]
 
+# group by state & city and summing the companies (i.e., total)
+# this will give insight of total number of companies in each state and city
+df.groupby(['state','city'])['c'].companies().reset_index() 
 
+# read data row wise
+for i in range(len(df)):
+  row_value = df['a'].iloc[i]
 
 # pearson's correlation (applicable only for continuos variables)
 df.corr()
