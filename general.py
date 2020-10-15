@@ -10,7 +10,7 @@ df = pd.read_csv('train.csv')[lambda x:x['client_number']==121]
 
 # group by state & city and summing the companies (i.e., total)
 # this will give insight of total number of companies in each state and city
-df.groupby(['state','city'])['c'].companies().reset_index() 
+df.groupby(['state','city'])['companies'].sum().reset_index() 
 
 # read data row wise
 for i in range(len(df)):
